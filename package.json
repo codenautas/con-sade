@@ -1,0 +1,36 @@
+{
+    "name": "con-sade",
+    "description": "acceso a api descarga de imágenes registro civil",
+    "version": "0.1.0",
+    "private": true,
+    "author": "Codenautas <codenautas@googlegroups.com>",
+    "license": "MIT",
+    "main": "dist/descarga.js",
+    "types": "dist/descarga.d.ts",
+    "files": [
+        "dist"
+    ],
+    "engines": {
+        "node": ">= 12.0.0"
+    },
+    "dependencies": {
+        "xml-js": "^1.6.11",
+        "mini-tools": "^1.11.1"
+    },
+    "devDependencies": {
+        "typescript": "^4.2.3",
+        "mixin-patch": "~0.3.4",
+        "@types/node": "^14.14.37",
+        "types.d.ts": "~0.6.1"
+    },
+    "scripts": {
+        "prepublish": "npm run build",
+        "build": "(tsc -p src || echo \"continue w/error\") && mixin-patch",
+        "mixin-patch": "mixin-patch",
+        "watch:buildU": "(tsc -p src/unlogged --watch || echo \"continue w/error\")",
+        "test": "mocha --reporter spec --bail --check-leaks test/",
+        "start": "node dist/descarga.js",
+        "dump": "npm start -- --dump-db",
+        "bdump": "npm run build && npm run dump"
+    }
+}

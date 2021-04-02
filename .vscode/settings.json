@@ -1,0 +1,4 @@
+{
+    "window.title": "CS ${dirty}${separator}${rootName}${separator}${activeEditorMedium}",
+    "typescript.tsdk": "node_modules/typescript/lib"
+}
