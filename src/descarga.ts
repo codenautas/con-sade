@@ -38,8 +38,8 @@ class Requester{
     ):Promise<TRec>{
         const postData = tipo==='raw:xml' ? data2send+'': tipo=='text' && method!='GET'?JSON.stringify(data2send):querystring.stringify(data2send);
         var data:string[]=[];
-        await fs.appendFile('local-result.log',(method||'POST')+' '+this.config.api.BASE_SERVICE_PATH+'\n','utf8');
-        await fs.appendFile('local-result.log',(typeof data2send == 'string'?data2send: JSON.stringify(data2send))+'\n','utf8');
+        // await fs.appendFile('local-result.log',(method||'POST')+' '+this.config.api.BASE_SERVICE_PATH+'\n','utf8');
+        // await fs.appendFile('local-result.log',(typeof data2send == 'string'?data2send: JSON.stringify(data2send))+'\n','utf8');
         var result = await new Promise<string>((resolve, reject)=>{
             //console.log('por request')
             var req = http.request(this.config.api.SERVICE_URL,{
@@ -70,15 +70,15 @@ class Requester{
             req.end();
         })
         var text = result;
-        await fs.appendFile('local-result.log','#result:\n\n','utf8');
-        await fs.appendFile('local-result.log',text+'\n\n','utf8');
+        // await fs.appendFile('local-result.log','#result:\n\n','utf8');
+        // await fs.appendFile('local-result.log',text+'\n\n','utf8');
         return text as TRec;
     }
 }
 
 export class ToSADE extends Requester{
-    async pedirDocumento(documentoNumero:string, origen:string){
-        var xmlText = await this.requerimiento<string, string>(
+    async pedirYGuardarDocumento(documentoNumero:string, origen:string){
+        let dataToSend = 
             `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="${this.config.api.envelopeURL}">
                 <soapenv:Header/>
                 <soapenv:Body>
@@ -94,29 +94,43 @@ export class ToSADE extends Requester{
                         </request>
                     </${this.config.api.requestHeader}>
                 </soapenv:Body>
-            </soapenv:Envelope>`,
-            {},
-            'raw:xml'
-        )
-        var datos = convert.xml2js(xmlText,{compact:true});
-        // @ts-ignore
-        var result = datos["soap:Envelope"]["soap:Body"][this.config.api.responseHeader]?.return?._text;
-        if (result){
-            var bin = Buffer.from(result, 'base64');
-            var dir = this.config.api.baseTargetFolderPath+'/'+origen
-            if (!fullFs.existsSync(dir)){
-                fullFs.mkdirSync(dir);
+            </soapenv:Envelope>`
+        try {
+            var xmlText = await this.requerimiento<string, string>(dataToSend, {},'raw:xml')
+            var datos = convert.xml2js(xmlText,{compact:true});
+            // @ts-ignore
+            var result = datos["soap:Envelope"]["soap:Body"][this.config.api.responseHeader]?.return?._text;
+            if (result){
+                var bin = Buffer.from(result, 'base64');
+                var dir = this.config.api.baseTargetFolderPath+'/'+origen
+                if (!fullFs.existsSync(dir)){
+                    fullFs.mkdirSync(dir);
+                }
+                await fs.writeFile(dir+'/'+documentoNumero+'.pdf',bin);
             }
-            await fs.writeFile(dir+'/'+documentoNumero+'.pdf',bin);
+        }catch(err){
+            console.log('err');
+            console.log(err);
         }
     }
 
     async descargarImg(caso:Caso){
+        //TODO SE REPITE REFACTORIZAR
         if (caso.gedo){
-            await this.pedirDocumento(caso.gedo, caso.origen);
+            try {
+                await this.pedirYGuardarDocumento(caso.gedo, caso.origen);
+            }catch(err){
+                console.log('err, no se pudo descargar '+ caso.gedo);
+                console.log(err);
+            }
         }
         if (caso.gedoRnp){
-            await this.pedirDocumento(caso.gedoRnp, caso.origen);
+            try {
+                await this.pedirYGuardarDocumento(caso.gedoRnp, caso.origen);
+            }catch(err){
+                console.log('err, no se pudo descargar '+ caso.gedoRnp);
+                console.log(err);
+            }
         }
     }
 
@@ -132,15 +146,10 @@ export class Caso{
 }
 
 export async function prueba(){
-    try{
-        var tr = new ToSADE();
-        await tr.configurar();
-        let casoPrueba = new Caso('unGedo','unGedoRNP', 't2-20200212')
-        await tr.descargarImg(casoPrueba);
-    }catch(err){
-        console.log('err');
-        console.log(err);
-    }
+    var tr = new ToSADE();
+    await tr.configurar();
+    let casoPrueba = new Caso('unGedo','unGedoRNP', 't2-20200212')
+    await tr.descargarImg(casoPrueba);
 }
 
 //prueba();
