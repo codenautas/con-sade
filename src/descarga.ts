@@ -102,7 +102,7 @@ export class ToSADE extends Requester{
             var result = datos["soap:Envelope"]["soap:Body"][this.config.api.responseHeader]?.return?._text;
             if (result){
                 var bin = Buffer.from(result, 'base64');
-                var dir = this.config.api.baseTargetFolderPath+'/'+origen
+                var dir = this.config.api.baseTargetFolderPath+origen
                 if (!fullFs.existsSync(dir)){
                     fullFs.mkdirSync(dir);
                 }
