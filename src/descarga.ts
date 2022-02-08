@@ -44,31 +44,38 @@ class Requester{
             //console.log('por request')
             var req = http.request(this.config.api.SERVICE_URL,{
                 method:method||'POST',
+                timeout:7000,
                 headers: {
                     'Content-Type': tipo=='raw:xml'?'application/xml':tipo=='text'?'text':'application/x-www-form-urlencoded',
                     'Content-Length': Buffer.byteLength(postData),
                     ...headers
                 },
                 path:this.config.api.BASE_SERVICE_PATH+(method=='GET'?postData:''),
-            },(res)=>{
-                res.on('data',(chunk)=>{
-                    data.push(chunk)
-                })
-                res.on('end',()=>{
+            }, (res) => {
+                res.on('data', (chunk) => {
+                    data.push(chunk);
+                });
+                res.on('end', () => {
                     console.log('end');
                     resolve(data.join(''));
-                })
-                res.on('error',(err)=>{
+                });
+                res.on('error', (err) => {
                     console.log('dentor de error');
                     console.log(err);
                     reject(err);
                 });
-            })
-            if(method!='GET'){
+            });
+
+            // use its "timeout" event to abort the request
+            req.on('timeout', () => {
+                reject('timeout');
+            });
+
+            if (method != 'GET') {
                 req.write(postData);
             }
             req.end();
-        })
+        });
         var text = result;
         // await fs.appendFile('local-result.log','#result:\n\n','utf8');
         // await fs.appendFile('local-result.log',text+'\n\n','utf8');
@@ -95,42 +102,27 @@ export class ToSADE extends Requester{
                     </${this.config.api.requestHeader}>
                 </soapenv:Body>
             </soapenv:Envelope>`
-        try {
-            var xmlText = await this.requerimiento<string, string>(dataToSend, {},'raw:xml')
-            var datos = convert.xml2js(xmlText,{compact:true});
-            // @ts-ignore
-            var result = datos["soap:Envelope"]["soap:Body"][this.config.api.responseHeader]?.return?._text;
-            if (result){
-                var bin = Buffer.from(result, 'base64');
-                var dir = this.config.api.baseTargetFolderPath+origen
-                if (!fullFs.existsSync(dir)){
-                    fullFs.mkdirSync(dir);
-                }
-                await fs.writeFile(dir+'/'+documentoNumero+'.pdf',bin);
+        var xmlText = await this.requerimiento<string, string>(dataToSend, {},'raw:xml')
+        var datos = convert.xml2js(xmlText,{compact:true});
+        // @ts-ignore
+        var result = datos["soap:Envelope"]["soap:Body"][this.config.api.responseHeader]?.return?._text;
+        if (result){
+            var bin = Buffer.from(result, 'base64');
+            var dir = this.config.api.baseTargetFolderPath+origen
+            if (!fullFs.existsSync(dir)){
+                fullFs.mkdirSync(dir);
             }
-        }catch(err){
-            console.log('err');
-            console.log(err);
+            await fs.writeFile(dir+'/'+documentoNumero+'.pdf',bin);
         }
     }
 
     async descargarImg(caso:Caso){
         //TODO SE REPITE REFACTORIZAR
         if (caso.gedo){
-            try {
-                await this.pedirYGuardarDocumento(caso.gedo, caso.origen);
-            }catch(err){
-                console.log('err, no se pudo descargar '+ caso.gedo);
-                console.log(err);
-            }
+            await this.pedirYGuardarDocumento(caso.gedo, caso.origen);
         }
         if (caso.gedoRnp){
-            try {
-                await this.pedirYGuardarDocumento(caso.gedoRnp, caso.origen);
-            }catch(err){
-                console.log('err, no se pudo descargar '+ caso.gedoRnp);
-                console.log(err);
-            }
+            await this.pedirYGuardarDocumento(caso.gedoRnp, caso.origen);
         }
     }
 
