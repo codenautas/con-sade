@@ -1,7 +1,7 @@
 {
     "name": "con-sade",
     "description": "acceso a api descarga de imágenes registro civil",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "private": false,
     "author": "Codenautas <codenautas@googlegroups.com>",
     "license": "MIT",

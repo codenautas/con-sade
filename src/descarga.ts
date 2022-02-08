@@ -68,7 +68,7 @@ class Requester{
 
             // use its "timeout" event to abort the request
             req.on('timeout', () => {
-                reject('timeout');
+                reject({message:'timeout'});
             });
 
             if (method != 'GET') {
