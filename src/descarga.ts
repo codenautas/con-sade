@@ -84,7 +84,7 @@ class Requester{
 }
 
 export class ToSADE extends Requester{
-    async pedirYGuardarDocumento(documentoNumero:string, origen:string){
+    async pedirYGuardarDocumento(documentoNumero:string, targetFolder:string){
         let dataToSend = 
             `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ar="${this.config.api.envelopeURL}">
                 <soapenv:Header/>
@@ -108,7 +108,7 @@ export class ToSADE extends Requester{
         var result = datos["soap:Envelope"]["soap:Body"][this.config.api.responseHeader]?.return?._text;
         if (result){
             var bin = Buffer.from(result, 'base64');
-            var dir = this.config.api.baseTargetFolderPath+origen
+            var dir = this.config.api.baseTargetFolderPath+targetFolder
             if (!fullFs.existsSync(dir)){
                 fullFs.mkdirSync(dir);
             }
@@ -119,10 +119,10 @@ export class ToSADE extends Requester{
     async descargarImg(caso:Caso){
         //TODO SE REPITE REFACTORIZAR
         if (caso.gedo){
-            await this.pedirYGuardarDocumento(caso.gedo, caso.origen);
+            await this.pedirYGuardarDocumento(caso.gedo, caso.folderForTDOrigen);
         }
         if (caso.gedoRnp){
-            await this.pedirYGuardarDocumento(caso.gedoRnp, caso.origen);
+            await this.pedirYGuardarDocumento(caso.gedoRnp, caso.folderForTDOrigen);
         }
     }
 
@@ -134,7 +134,7 @@ export class ToSADE extends Requester{
 }
 
 export class Caso{
-    constructor(public gedo:string, public gedoRnp:string, public origen:string){}
+    constructor(public gedo:string, public gedoRnp:string, public folderForTDOrigen:string){}
 }
 
 export async function prueba(){
